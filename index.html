@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Live SmartCache Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .card-title {
+            color: var(--secondary);
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        button {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-icon {
+            margin-right: 0.5rem;
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-card h3 {
+            margin-top: 0;
+            color: var(--secondary);
+        }
+        
+        .result-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+        
+        .fifo { color: var(--primary); }
+        .lru { color: var(--success); }
+        .optimal { color: var(--warning); }
+        
+        .chart-container {
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+        
+        .page-sequence {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .badge-primary {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+        
+        .badge-success {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+        
+        .badge-warning {
+            background-color: rgba(248, 150, 30, 0.1);
+            color: var(--warning);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--dark);
+            opacity: 0.7;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            opacity: 1;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .visualization {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .cache-visual {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .cache-slot {
+            width: 50px;
+            height: 50px;
+            border: 2px dashed #adb5bd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background-color: white;
+            transition: all 0.3s;
+        }
+        
+        .cache-slot.filled {
+            border-color: var(--accent);
+            background-color: rgba(72, 149, 239, 0.1);
+            animation: pulse 0.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            width: 100%;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Live SmartCache Simulator</h1>
+            <p class="tagline">Visualize and compare page replacement algorithms in real-time</p>
+        </header>
+        
+        <div class="card">
+            <h2 class="card-title">Simulation Parameters</h2>
+            <div class="form-group">
+                <label for="sequenceSize">Number of memory pages to monitor:</label>
+                <input type="number" id="sequenceSize" min="5" max="1000" value="23">
+            </div>
+            
+            <div class="form-group">
+                <label>Page reference sequence generation:</label>
+                <div style="display: flex; gap: 1rem;">
+                    <label style="display: flex; align-items: center;">
+                        <input type="radio" name="sequenceType" value="random" checked style="width: auto; margin-right: 0.5rem;">
+                        Random generation
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="radio" name="sequenceType" value="manual" style="width: auto; margin-right: 0.5rem;">
+                        Manual input
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group" id="manualSequenceGroup" style="display: none;">
+                <label for="manualSequence">Enter page reference sequence (space-separated):</label>
+                <input type="text" id="manualSequence" placeholder="e.g. 1 2 3 1 4 5 2 3">
+            </div>
+            
+            <div class="form-group">
+                <label for="cacheSize">Cache Size (number of frames):</label>
+                <input type="number" id="cacheSize" min="1" max="20" value="5">
+            </div>
+            
+            <button id="runSimulation">
+                <span class="btn-icon">▶️</span> Run Simulation
+            </button>
+        </div>
+        
+        <div id="resultContainer" class="result-container">
+            <h2 class="card-title">Simulation Results</h2>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="summary">Summary</div>
+                <div class="tab" data-tab="fifo">FIFO</div>
+                <div class="tab" data-tab="lru">LRU</div>
+                <div class="tab" data-tab="optimal">Optimal</div>
+            </div>
+            
+            <div class="tab-content active" id="summary-tab">
+                <div class="result-grid">
+                    <div class="result-card">
+                        <h3>FIFO Algorithm</h3>
+                        <div class="result-value fifo" id="fifo-faults">0</div>
+                        <p>First-In-First-Out page replacement</p>
+                    </div>
+                    <div class="result-card">
+                        <h3>LRU Algorithm</h3>
+                        <div class="result-value lru" id="lru-faults">0</div>
+                        <p>Least Recently Used page replacement</p>
+                    </div>
+                    <div class="result-card">
+                        <h3>Optimal Algorithm</h3>
+                        <div class="result-value optimal" id="optimal-faults">0</div>
+                        <p>Theoretical optimal page replacement</p>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+                
+                <div class="card">
+                    <h3 class="card-title">Page Reference Sequence</h3>
+                    <div class="page-sequence" id="pageSequence"></div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="fifo-tab">
+                <div class="card">
+                    <h3 class="card-title">FIFO Algorithm Visualization</h3>
+                    <div class="visualization">
+                        <div class="cache-visual" id="fifo-cache"></div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value" id="fifo-total-faults">0</div>
+                                <div class="stat-label">Total Page Faults</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="fifo-hit-ratio">0%</div>
+                                <div class="stat-label">Hit Ratio</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="fifo-steps"></div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="lru-tab">
+                <div class="card">
+                    <h3 class="card-title">LRU Algorithm Visualization</h3>
+                    <div class="visualization">
+                        <div class="cache-visual" id="lru-cache"></div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value" id="lru-total-faults">0</div>
+                                <div class="stat-label">Total Page Faults</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="lru-hit-ratio">0%</div>
+                                <div class="stat-label">Hit Ratio</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="lru-steps"></div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="optimal-tab">
+                <div class="card">
+                    <h3 class="card-title">Optimal Algorithm Visualization</h3>
+                    <div class="visualization">
+                        <div class="cache-visual" id="optimal-cache"></div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value" id="optimal-total-faults">0</div>
+                                <div class="stat-label">Total Page Faults</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="optimal-hit-ratio">0%</div>
+                                <div class="stat-label">Hit Ratio</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="optimal-steps"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025 SmartCache Simulator | Computer Memory Management Visualization Tool</p>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    const tabId = this.getAttribute('data-tab') + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Toggle manual sequence input
+            document.querySelectorAll('input[name="sequenceType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('manualSequenceGroup').style.display = 
+                        this.value === 'manual' ? 'block' : 'none';
+                });
+            });
+            
+            // Run simulation
+            document.getElementById('runSimulation').addEventListener('click', runSimulation);
+            
+            // Initialize chart
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const resultsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['FIFO', 'LRU', 'Optimal'],
+                    datasets: [{
+                        label: 'Page Faults',
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(67, 97, 238, 0.7)',
+                            'rgba(76, 201, 240, 0.7)',
+                            'rgba(248, 150, 30, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(67, 97, 238, 1)',
+                            'rgba(76, 201, 240, 1)',
+                            'rgba(248, 150, 30, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Page Faults'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Page Replacement Algorithm Comparison',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            function runSimulation() {
+                const sequenceSize = parseInt(document.getElementById('sequenceSize').value);
+                const cacheSize = parseInt(document.getElementById('cacheSize').value);
+                const sequenceType = document.querySelector('input[name="sequenceType"]:checked').value;
+                
+                let pages = [];
+                
+                if (sequenceType === 'random') {
+                    // Generate random pages with some repetition
+                    for (let i = 0; i < sequenceSize; i++) {
+                        if (i % 7 === 0 || i % 9 === 0) {
+                            pages.push(1); // Frequently reused page
+                        } else if (i % 5 === 0) {
+                            pages.push(2); // Semi-frequent
+                        } else {
+                            pages.push(Math.floor(Math.random() * 10) + 3); // Random mix
+                        }
+                    }
+                } else {
+                    // Parse manual sequence
+                    const manualInput = document.getElementById('manualSequence').value.trim();
+                    pages = manualInput.split(/\s+/).map(Number);
+                }
+                
+                // Display page sequence
+                const pageSequenceEl = document.getElementById('pageSequence');
+                pageSequenceEl.innerHTML = '';
+                pages.forEach(page => {
+                    const span = document.createElement('span');
+                    span.className = 'badge badge-primary';
+                    span.textContent = page;
+                    pageSequenceEl.appendChild(span);
+                });
+                
+                // Run algorithms
+                const fifoResult = fifoPageReplacement([...pages], cacheSize);
+                const lruResult = lruPageReplacement([...pages], cacheSize);
+                const optimalResult = optimalPageReplacement([...pages], cacheSize);
+                
+                // Update results
+                document.getElementById('fifo-faults').textContent = fifoResult.faults;
+                document.getElementById('lru-faults').textContent = lruResult.faults;
+                document.getElementById('optimal-faults').textContent = optimalResult.faults;
+                
+                // Update chart
+                resultsChart.data.datasets[0].data = [fifoResult.faults, lruResult.faults, optimalResult.faults];
+                resultsChart.update();
+                
+                // Show visualizations
+                visualizeAlgorithm('fifo', fifoResult);
+                visualizeAlgorithm('lru', lruResult);
+                visualizeAlgorithm('optimal', optimalResult);
+                
+                // Show results
+                document.getElementById('resultContainer').style.display = 'block';
+            }
+            
+            function fifoPageReplacement(pages, capacity) {
+                const cache = [];
+                const pageSet = new Set();
+                const steps = [];
+                let faults = 0;
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const page = pages[i];
+                    const step = {
+                        page: page,
+                        cacheBefore: [...cache],
+                        fault: false,
+                        replaced: null
+                    };
+                    
+                    if (!pageSet.has(page)) {
+                        faults++;
+                        step.fault = true;
+                        
+                        if (cache.length === capacity) {
+                            const removed = cache.shift();
+                            pageSet.delete(removed);
+                            step.replaced = removed;
+                        }
+                        
+                        cache.push(page);
+                        pageSet.add(page);
+                    }
+                    
+                    step.cacheAfter = [...cache];
+                    steps.push(step);
+                }
+                
+                return { faults, steps };
+            }
+            
+            function lruPageReplacement(pages, capacity) {
+                const cache = [];
+                const pageMap = new Map(); // Stores page and its last used index
+                const steps = [];
+                let faults = 0;
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const page = pages[i];
+                    const step = {
+                        page: page,
+                        cacheBefore: [...cache],
+                        fault: false,
+                        replaced: null
+                    };
+                    
+                    if (!pageMap.has(page)) {
+                        faults++;
+                        step.fault = true;
+                        
+                        if (cache.length === capacity) {
+                            // Find LRU page
+                            let lruIndex = 0;
+                            let lruPage = cache[0];
+                            let lruTime = pageMap.get(lruPage);
+                            
+                            for (let j = 1; j < cache.length; j++) {
+                                const currentPage = cache[j];
+                                if (pageMap.get(currentPage) < lruTime) {
+                                    lruTime = pageMap.get(currentPage);
+                                    lruPage = currentPage;
+                                    lruIndex = j;
+                                }
+                            }
+                            
+                            // Remove LRU page
+                            cache.splice(lruIndex, 1);
+                            pageMap.delete(lruPage);
+                            step.replaced = lruPage;
+                        }
+                        
+                        // Add new page
+                        cache.push(page);
+                    }
+                    
+                    // Update page access time
+                    pageMap.set(page, i);
+                    step.cacheAfter = [...cache];
+                    steps.push(step);
+                }
+                
+                return { faults, steps };
+            }
+            
+            function optimalPageReplacement(pages, capacity) {
+                const cache = [];
+                const steps = [];
+                let faults = 0;
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const page = pages[i];
+                    const step = {
+                        page: page,
+                        cacheBefore: [...cache],
+                        fault: false,
+                        replaced: null
+                    };
+                    
+                    if (!cache.includes(page)) {
+                        faults++;
+                        step.fault = true;
+                        
+                        if (cache.length === capacity) {
+                            // Find page that won't be used for longest time
+                            let farthest = -1;
+                            let indexToReplace = -1;
+                            
+                            for (let j = 0; j < cache.length; j++) {
+                                let k;
+                                for (k = i + 1; k < pages.length; k++) {
+                                    if (cache[j] === pages[k]) {
+                                        if (k > farthest) {
+                                            farthest = k;
+                                            indexToReplace = j;
+                                        }
+                                        break;
+                                    }
+                                }
+                                
+                                // If page not found in future, replace it
+                                if (k === pages.length) {
+                                    indexToReplace = j;
+                                    break;
+                                }
+                            }
+                            
+                            const removed = cache[indexToReplace];
+                            cache.splice(indexToReplace, 1);
+                            step.replaced = removed;
+                        }
+                        
+                        cache.push(page);
+                    }
+                    
+                    step.cacheAfter = [...cache];
+                    steps.push(step);
+                }
+                
+                return { faults, steps };
+            }
+            
+            function visualizeAlgorithm(algorithm, result) {
+                const cacheEl = document.getElementById(`${algorithm}-cache`);
+                const stepsEl = document.getElementById(`${algorithm}-steps`);
+                const totalFaultsEl = document.getElementById(`${algorithm}-total-faults`);
+                const hitRatioEl = document.getElementById(`${algorithm}-hit-ratio`);
+                
+                // Clear previous visualization
+                cacheEl.innerHTML = '';
+                stepsEl.innerHTML = '';
+                
+                // Create cache slots
+                const cacheSize = parseInt(document.getElementById('cacheSize').value);
+                for (let i = 0; i < cacheSize; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'cache-slot';
+                    slot.textContent = '-';
+                    cacheEl.appendChild(slot);
+                }
+                
+                // Calculate hit ratio
+                const totalPages = result.steps.length;
+                const hitRatio = ((totalPages - result.faults) / totalPages * 100).toFixed(1);
+                
+                totalFaultsEl.textContent = result.faults;
+                hitRatioEl.textContent = `${hitRatio}%`;
+                
+                // Animate through steps
+                let currentStep = 0;
+                
+                function playStep() {
+                    if (currentStep >= result.steps.length) return;
+                    
+                    const step = result.steps[currentStep];
+                    const slots = cacheEl.querySelectorAll('.cache-slot');
+                    
+                    // Highlight current page
+                    const pageBadge = document.createElement('span');
+                    pageBadge.className = 'badge ' + (step.fault ? 'badge-danger' : 'badge-success');
+                    pageBadge.textContent = step.page;
+                    
+                    // Create step description
+                    const stepEl = document.createElement('div');
+                    stepEl.className = 'card';
+                    stepEl.style.marginBottom = '1rem';
+                    stepEl.style.animation = 'fadeIn 0.3s ease-out';
+                    
+                    const stepTitle = document.createElement('h4');
+                    stepTitle.style.marginTop = '0';
+                    stepTitle.innerHTML = `Step ${currentStep + 1}: Accessing page ${pageBadge.outerHTML}`;
+                    
+                    const stepDetails = document.createElement('p');
+                    stepDetails.innerHTML = `Cache before: ${step.cacheBefore.join(', ') || 'empty'}`;
+                    
+                    if (step.fault) {
+                        const faultDetails = document.createElement('p');
+                        if (step.replaced !== null) {
+                            faultDetails.innerHTML = `<strong>Page fault:</strong> Replaced page ${step.replaced} with ${step.page}`;
+                        } else {
+                            faultDetails.innerHTML = `<strong>Page fault:</strong> Loaded page ${step.page} into empty slot`;
+                        }
+                        stepDetails.appendChild(document.createElement('br'));
+                        stepDetails.appendChild(faultDetails);
+                    } else {
+                        const hitDetails = document.createElement('p');
+                        hitDetails.innerHTML = `<strong>Page hit:</strong> Page ${step.page} was already in cache`;
+                        stepDetails.appendChild(document.createElement('br'));
+                        stepDetails.appendChild(hitDetails);
+                    }
+                    
+                    stepEl.appendChild(stepTitle);
+                    stepEl.appendChild(stepDetails);
+                    stepsEl.appendChild(stepEl);
+                    
+                    // Update cache visualization
+                    slots.forEach((slot, index) => {
+                        slot.textContent = index < step.cacheAfter.length ? step.cacheAfter[index] : '-';
+                        slot.className = 'cache-slot';
+                        if (index < step.cacheAfter.length) {
+                            slot.classList.add('filled');
+                        }
+                    });
+                    
+                    // Scroll to bottom of steps
+                    stepsEl.scrollTop = stepsEl.scrollHeight;
+                    
+                    currentStep++;
+                    setTimeout(playStep, 1000);
+                }
+                
+                // Start animation
+                playStep();
+            }
+        });
+    </script>
+</body>
+</html>
