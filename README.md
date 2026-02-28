@@ -1,5 +1,8 @@
 # 🚀 SmartCache Simulator
 
+🔗 **Live Website:**  
+👉 [Smart-Cache](https://smart-cache.netlify.app/)
+
 SmartCache is a C++ project that simulates and compares three classic page replacement algorithms:
 - FIFO (First-In-First-Out)
 - LRU (Least Recently Used)
